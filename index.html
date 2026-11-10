@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Seconds Without My Amore 💞</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      color: #fff;
+      background:#000;
+    }
+
+    /* Arka plan bulanık video */
+    .bg-blur {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      filter: blur(25px) brightness(0.8);
+      transform: scale(1.05);
+      object-fit: cover;
+    }
+
+    /* Ortadaki 9:16 video çerçevesi */
+    .main-video {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      aspect-ratio: 9 / 16;
+      width: min(100%, 600px);
+      z-index: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
+      background: #000;
+    }
+    .main-video video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Yazı ve sayaç */
+    .content {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .text {
+      font-size: 28px;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 10px rgba(0,0,0,.7);
+    }
+    .counter {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: rgba(0,0,0,0.35);
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 10px;
+      backdrop-filter: blur(8px);
+    }
+
+    /* Uçuşan kalpler */
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      transform: rotate(45deg);
+      border-radius: 3px;
+      animation: float 6s linear forwards;
+      z-index: 1;
+    }
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+    }
+    .heart::before { top: -10px; left: 0; }
+    .heart::after { left: -10px; top: 0; }
+
+    @keyframes float {
+      0% { transform: translate(0,0) rotate(45deg); opacity: 1; }
+      100% { transform: translate(calc(var(--x) * 1px), -600px) rotate(45deg); opacity: 0; }
+    }
+
+    /* Tıklamada çıkan patlayan görsel */
+    .burst {
+      position: fixed;
+      width: var(--size, 120px);
+      height: var(--size, 120px);
+      transform: scale(0) rotate(0deg);
+      opacity: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: center/contain no-repeat;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.55));
+      animation: burstAnim var(--dur, 900ms) ease-out var(--delay, 0ms) forwards;
+    }
+
+    @keyframes burstAnim {
+      0%   { transform: scale(0) rotate(0deg); opacity: 0; }
+      30%  { opacity: 1; }
+      100% { transform: translate(var(--tx,0), var(--ty,0)) scale(var(--scale,1.8)) rotate(var(--rot,0deg)); opacity: 0; }
+    }
+
+    @media (max-width: 420px){
+      .main-video{ border-radius: 10px; }
+      .text{ font-size: 22px; }
+      .counter{ font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <video class="bg-blur" src="background.mp4" autoplay muted loop playsinline></video>
+
+  <div class="main-video">
+    <video src="background.mp4" autoplay muted loop playsinline></video>
+  </div>
+
+  <div class="content">
+    <div class="text">Seconds without my Amore 💞</div>
+    <div class="counter" id="counter">0</div>
+  </div>
+
+  <!-- Müzik artık sonsuz döngüyle çalacak -->
+  <audio id="music" src="music.mp3" preload="auto" loop></audio>
+
+  <script>
+    /* === Sayaç === */
+    const START = new Date('2025-10-11T00:59:00+02:00');
+    const counterEl = document.getElementById('counter');
+    function updateCounter() {
+      const seconds = Math.floor((Date.now() - START.getTime()) / 1000);
+      counterEl.textContent = Math.max(0, seconds).toLocaleString('tr-TR');
+    }
+    updateCounter();
+    setInterval(updateCounter, 250);
+
+    /* === Kalpler === */
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.style.setProperty('--x', Math.random() * 200 - 100);
+      heart.style.left = Math.random() * window.innerWidth + 'px';
+      heart.style.bottom = '-20px';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 6000);
+    }
+    setInterval(createHeart, 350);
+
+    /* === Çoklu patlama (tıklanan yerde) === */
+    const popupImages = [
+      "popup1.png","popup2.png","popup3.png",
+      "popup4.png","popup5.png","popup6.png"
+    ];
+    const music = document.getElementById('music');
+    let musicStarted = false;
+
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+    function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function makeBurst(imgUrl, x, y, delayMs=0){
+      const el = document.createElement('div');
+      el.className = 'burst';
+      el.style.backgroundImage = `url('${imgUrl}')`;
+      el.style.left = `${x}px`;
+      el.style.top  = `${y}px`;
+
+      // rastgele hareket yönü
+      const angle = rand(-Math.PI, Math.PI);
+      const dist  = rand(60, 150);
+      el.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+      el.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+      el.style.setProperty('--scale', rand(1.4, 2.4));
+      el.style.setProperty('--rot', `${rand(-30,30)}deg`);
+      el.style.setProperty('--dur', `${rand(800,1200)}ms`);
+      el.style.setProperty('--delay', `${delayMs}ms`);
+      el.style.setProperty('--size', `${rand(100,160)}px`);
+
+      document.body.appendChild(el);
+      el.addEventListener('animationend', ()=>el.remove());
+    }
+
+    document.body.addEventListener('click', e=>{
+      if(!musicStarted){ music.play().catch(()=>{}); musicStarted = true; }
+
+      // 2 veya 3 görsel seç
+      const howMany = Math.random() < 0.5 ? 2 : 3;
+      const pool = [...popupImages];
+      for(let i=0;i<howMany && pool.length;i++){
+        const img = pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        makeBurst(img, e.clientX, e.clientY, i*60);
+      }
+    });
+  </script>
+</body>
+</html>
